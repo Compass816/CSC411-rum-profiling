@@ -38,10 +38,10 @@ pub fn run(program: Vec<u32>) {
                 segmap.store(r[instr.ra], r[instr.rb], r[instr.rc]);
             }
             Opcode::Add => {
-                r[instr.ra] = r[instr.rb] + r[instr.rc];
+                r[instr.ra] = r[instr.rb].wrapping_add(r[instr.rc]);
             }
             Opcode::Mul => {
-                r[instr.ra] = r[instr.rb] * r[instr.rc];
+                r[instr.ra] = r[instr.rb].wrapping_mul(r[instr.rc]);
             }
             Opcode::Div => {
                 r[instr.ra] = r[instr.rb] / r[instr.rc];
@@ -71,7 +71,10 @@ pub fn run(program: Vec<u32>) {
                 None => r[instr.rc] = !0,
             },
             Opcode::LoadProgram => {
-                segmap.load_segment(r[instr.rb]);
+                let rb = r[instr.rb];
+                if rb != 0 {
+                    segmap.load_segment(rb);
+                }
                 pc = r[instr.rc];
             }
             Opcode::LoadValue => {
