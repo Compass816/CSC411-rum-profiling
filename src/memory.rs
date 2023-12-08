@@ -45,7 +45,7 @@ impl Memory {
             address,
         );
         self.pool.push(address);
-        let address = address as usize;  // Convert address to usize
+        let address = address as usize; // Convert address to usize
         self.heap[address].clear();
     }
 
@@ -53,9 +53,9 @@ impl Memory {
     // initialized, panics otherwise.
     pub fn load(&self, seg_id: u32, address: u32) -> u32 {
         self.heap
-        .get(seg_id as usize)
-        .and_then(|segment| segment.get(address as usize).copied())
-        .unwrap()
+            .get(seg_id as usize)
+            .and_then(|segment| segment.get(address as usize).copied())
+            .unwrap()
     }
 
     // get the instruction word corresponding to the given program counter
@@ -64,30 +64,26 @@ impl Memory {
     pub fn get_instruction(&self, pc: u32) -> u32 {
         // SAFETY: `heap` always has length at least 1 and PROGRAM_ADDRESS
         // is always == 0. This improves performance by about 10%.
-        self.heap
-        .get(PROGRAM_ADDRESS as usize)
-        .and_then(|segment| segment.get(pc as usize).copied())
-        .unwrap()
+        let segment = &self.heap[PROGRAM_ADDRESS as usize];
+        segment[pc as usize]
     }
 
     // write a value into the given address of the given segment.
     pub fn store(&mut self, seg_id: u32, address: u32, value: u32) {
-        let seg_id_usize = seg_id as usize;  // Convert seg_id to usize
-    let memory = self
-        .heap
-        .get_mut(seg_id_usize)
-        .expect("Memory was unallocated");
-    memory[address as usize] = value;
+        let seg_id_usize = seg_id as usize; // Convert seg_id to usize
+        let memory =
+            self.heap.get_mut(seg_id_usize).expect("Memory was unallocated");
+        memory[address as usize] = value;
     }
 
     // replace the program with the vector at the given address
     pub fn load_segment(&mut self, seg_id: u32) {
         let program = self
-        .heap
-        .get(seg_id as usize)
-        .expect("Found no program at the given address")
-        .clone();
-    let dest = &mut self.heap[PROGRAM_ADDRESS as usize];
-    *dest = program;
-}
+            .heap
+            .get(seg_id as usize)
+            .expect("Found no program at the given address")
+            .clone();
+        let dest = &mut self.heap[PROGRAM_ADDRESS as usize];
+        *dest = program;
+    }
 }

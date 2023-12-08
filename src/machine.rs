@@ -2,7 +2,7 @@ use std::convert::TryInto;
 use std::fs::File;
 use std::io::prelude::*;
 use std::io::{stdin, stdout};
-use std::process;
+use std::{process, rc};
 
 //use crate::memory;
 use crate::memory::Memory;
@@ -27,42 +27,47 @@ pub fn run(memory: &mut Memory) {
         let op = instr.opcode;
         inst_counter += 1;
         pc += 1;
+
+        let ra_val = r[instr.ra];
+        let rb_val = r[instr.rb];
+        let rc_val = r[instr.rc];
+
         match op {
             Opcode::CMov => {
-                if r[instr.rc] != 0 {
-                    r[instr.ra] = r[instr.rb]
+                if rc_val != 0 {
+                    r[instr.ra] = rb_val
                 }
             }
             Opcode::Load => {
-                r[instr.ra] = memory.load(r[instr.rb], r[instr.rc]);
+                r[instr.ra] = memory.load(rb_val, rc_val);
             }
             Opcode::Store => {
-                memory.store(r[instr.ra], r[instr.rb], r[instr.rc]);
+                memory.store(ra_val, rb_val, rc_val);
             }
             Opcode::Add => {
-                r[instr.ra] = r[instr.rb].wrapping_add(r[instr.rc]);
+                r[instr.ra] = rb_val.wrapping_add(rc_val);
             }
             Opcode::Mul => {
-                r[instr.ra] = r[instr.rb].wrapping_mul(r[instr.rc]);
+                r[instr.ra] = rb_val.wrapping_mul(rc_val);
             }
             Opcode::Div => {
-                r[instr.ra] = r[instr.rb] / r[instr.rc];
+                r[instr.ra] = rb_val / rc_val;
             }
             Opcode::Nand => {
-                r[instr.ra] = !(r[instr.rb] & r[instr.rc]);
+                r[instr.ra] = !(rb_val & rc_val);
             }
             Opcode::Halt => {
                 eprintln!("{} instructions executed", inst_counter);
                 process::exit(0);
             }
             Opcode::MapSegment => {
-                r[instr.rb] = memory.allocate(r[instr.rc]);
+                r[instr.rb] = memory.allocate(rc_val);
             }
             Opcode::UnmapSegment => {
-                memory.deallocate(r[instr.rc]);
+                memory.deallocate(rc_val);
             }
             Opcode::Output => {
-                let value = r[instr.rc] as u8;
+                let value = rc_val as u8;
                 stdout().write_all(&[value]).unwrap();
                 stdout().flush().unwrap();
             }
@@ -74,10 +79,10 @@ pub fn run(memory: &mut Memory) {
             },
             Opcode::LoadProgram => {
 
-                if r[instr.rb] != 0 {
-                    memory.load_segment(r[instr.rb]);
+                if rb_val != 0 {
+                    memory.load_segment(rb_val);
                 }
-                pc = r[instr.rc];
+                pc = rc_val;
                 
             }
             Opcode::LoadValue => {
