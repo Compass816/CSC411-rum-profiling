@@ -4,21 +4,23 @@ use std::io::prelude::*;
 use std::io::{stdin, stdout};
 use std::process;
 
-use crate::memory;
+//use crate::memory;
+use crate::memory::Memory;
 
-pub fn run(program: Vec<u32>) {
+
+pub fn run(memory: &mut Memory) {
     // Takes an in-memory executable image
     // as specified by the UM spec, and executes it
     // It is a c.r.e. if an instruction word has
     // an invalid opcode (14 or 15).
-    let mut segmap = memory::Memory::new(program);
+  //  let mut segmap = memory::Memory::new(program);
     // next, start calling decode() on each instruction
     // and dispatch it!
     let mut r = Registers::new();
     let mut pc = 0_u32;
     let mut inst_counter = 0_u64;
     loop {
-        let instr = match Instruction::decode(segmap.get_instruction(pc)) {
+        let instr = match Instruction::decode(memory.get_instruction(pc)) {
             Some(instr) => instr,
             None => panic!("illegal instruction"),
         };
@@ -32,10 +34,10 @@ pub fn run(program: Vec<u32>) {
                 }
             }
             Opcode::Load => {
-                r[instr.ra] = segmap.load(r[instr.rb], r[instr.rc]);
+                r[instr.ra] = memory.load(r[instr.rb], r[instr.rc]);
             }
             Opcode::Store => {
-                segmap.store(r[instr.ra], r[instr.rb], r[instr.rc]);
+                memory.store(r[instr.ra], r[instr.rb], r[instr.rc]);
             }
             Opcode::Add => {
                 r[instr.ra] = r[instr.rb].wrapping_add(r[instr.rc]);
@@ -54,10 +56,10 @@ pub fn run(program: Vec<u32>) {
                 process::exit(0);
             }
             Opcode::MapSegment => {
-                r[instr.rb] = segmap.allocate(r[instr.rc]);
+                r[instr.rb] = memory.allocate(r[instr.rc]);
             }
             Opcode::UnmapSegment => {
-                segmap.deallocate(r[instr.rc]);
+                memory.deallocate(r[instr.rc]);
             }
             Opcode::Output => {
                 let value = r[instr.rc] as u8;
@@ -71,11 +73,12 @@ pub fn run(program: Vec<u32>) {
                 None => r[instr.rc] = !0,
             },
             Opcode::LoadProgram => {
-                let rb = r[instr.rb];
-                if rb != 0 {
-                    segmap.load_segment(rb);
+
+                if r[instr.rb] != 0 {
+                    memory.load_segment(r[instr.rb]);
                 }
                 pc = r[instr.rc];
+                
             }
             Opcode::LoadValue => {
                 r[instr.ra] = instr.value;
