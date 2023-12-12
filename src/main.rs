@@ -1,4 +1,3 @@
-use rum::machine;
 use std::env;
 use rum::memory::Memory;
 

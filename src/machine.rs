@@ -2,7 +2,7 @@ use std::convert::TryInto;
 use std::fs::File;
 use std::io::prelude::*;
 use std::io::{stdin, stdout};
-use std::{process, rc};
+use std::process;
 
 //use crate::memory;
 use crate::memory::Memory;
@@ -13,14 +13,15 @@ pub fn run(memory: &mut Memory) {
     // as specified by the UM spec, and executes it
     // It is a c.r.e. if an instruction word has
     // an invalid opcode (14 or 15).
-  //  let mut segmap = memory::Memory::new(program);
+    // let mut segmap = memory::Memory::new(program);
     // next, start calling decode() on each instruction
     // and dispatch it!
     let mut r = Registers::new();
     let mut pc = 0_u32;
     let mut inst_counter = 0_u64;
     loop {
-        let instr = match Instruction::decode(memory.get_instruction(pc)) {
+        let instr_word = memory.get_instruction(pc);
+        let instr = match Instruction::decode(instr_word) {
             Some(instr) => instr,
             None => panic!("illegal instruction"),
         };
@@ -78,7 +79,6 @@ pub fn run(memory: &mut Memory) {
                 None => r[instr.rc] = !0,
             },
             Opcode::LoadProgram => {
-
                 if rb_val != 0 {
                     memory.load_segment(rb_val);
                 }
@@ -134,26 +134,6 @@ pub fn boot(filename: &str) -> Vec<u32> {
 
 // functions for instruction parsing.
 
-fn parse_opcode(instruction: u32) -> Option<Opcode> {
-    Some(match (instruction >> 28) & 0b1111 {
-        0 => Opcode::CMov,
-        1 => Opcode::Load,
-        2 => Opcode::Store,
-        3 => Opcode::Add,
-        4 => Opcode::Mul,
-        5 => Opcode::Div,
-        6 => Opcode::Nand,
-        7 => Opcode::Halt,
-        8 => Opcode::MapSegment,
-        9 => Opcode::UnmapSegment,
-        10 => Opcode::Output,
-        11 => Opcode::Input,
-        12 => Opcode::LoadProgram,
-        13 => Opcode::LoadValue,
-        _ => return None,
-    })
-}
-
 #[derive(Debug)]
 struct Instruction {
     opcode: Opcode,
@@ -165,7 +145,24 @@ struct Instruction {
 
 impl Instruction {
     fn decode(instruction: u32) -> Option<Instruction> {
-        let opcode = parse_opcode(instruction)?;
+        let opcode = match(instruction >> 28) & 0b1111 {
+            0 => Opcode::CMov,
+            1 => Opcode::Load,
+            2 => Opcode::Store,
+            3 => Opcode::Add,
+            4 => Opcode::Mul,
+            5 => Opcode::Div,
+            6 => Opcode::Nand,
+            7 => Opcode::Halt,
+            8 => Opcode::MapSegment,
+            9 => Opcode::UnmapSegment,
+            10 => Opcode::Output,
+            11 => Opcode::Input,
+            12 => Opcode::LoadProgram,
+            13 => Opcode::LoadValue,
+            _ => return None,
+        };
+
         let mut inst = Instruction { opcode, ra: 0, rb: 0, rc: 0, value: 0 };
         match inst.opcode {
             Opcode::LoadValue => {

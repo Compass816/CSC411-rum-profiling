@@ -1,4 +1,3 @@
-use std::collections::HashMap;
 const PROGRAM_ADDRESS: u32 = 0;
 
 #[derive(Debug)]
@@ -52,10 +51,7 @@ impl Memory {
     // supply contents of the memory at the given address if
     // initialized, panics otherwise.
     pub fn load(&self, seg_id: u32, address: u32) -> u32 {
-        self.heap
-            .get(seg_id as usize)
-            .and_then(|segment| segment.get(address as usize).copied())
-            .unwrap()
+        self.heap[seg_id as usize][address as usize]
     }
 
     // get the instruction word corresponding to the given program counter
@@ -70,18 +66,14 @@ impl Memory {
 
     // write a value into the given address of the given segment.
     pub fn store(&mut self, seg_id: u32, address: u32, value: u32) {
-        let seg_id_usize = seg_id as usize; // Convert seg_id to usize
-        let memory =
-            self.heap.get_mut(seg_id_usize).expect("Memory was unallocated");
-        memory[address as usize] = value;
+        self.heap[seg_id as usize][address as usize] = value;
+
     }
 
     // replace the program with the vector at the given address
     pub fn load_segment(&mut self, seg_id: u32) {
         let program = self
-            .heap
-            .get(seg_id as usize)
-            .expect("Found no program at the given address")
+            .heap[seg_id as usize]
             .clone();
         let dest = &mut self.heap[PROGRAM_ADDRESS as usize];
         *dest = program;
