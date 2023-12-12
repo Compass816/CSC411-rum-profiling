@@ -60,8 +60,8 @@ impl Memory {
     pub fn get_instruction(&self, pc: u32) -> u32 {
         // SAFETY: `heap` always has length at least 1 and PROGRAM_ADDRESS
         // is always == 0. This improves performance by about 10%.
-        let segment = &self.heap[PROGRAM_ADDRESS as usize];
-        segment[pc as usize]
+        let segment = self.heap[PROGRAM_ADDRESS as usize][pc as usize];
+        segment
     }
 
     // write a value into the given address of the given segment.
